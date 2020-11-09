@@ -88,15 +88,27 @@ namespace BuilderPattern
             Console.WriteLine("Hello Builder Pattern!");
 
             //PhoneTest();
+            FluentPhoneTest();
 
             // SalesReportTest();
+
+            // Biblioteka Fluent do wyrazen regularnych (Regex)
+            // https://github.com/VerbalExpressions/CSharpVerbalExpressions
+
+            // Biblioteka Fluent do obsługi czasu
+            // https://github.com/duelinmarkers/FluentTime
+
+        }
+
+        private static void FluentPhoneTest()
+        {
             FluentPhone
                 .Hangup()
-                .From("555444333")                
+                .From("555444333")
                 .To("555888111")
                 .To("555999999")
                 .WithSubject("Wzorce projektowe w C#")
-                .Call();                   
+                .Call();
         }
 
         private static void SalesReportTest()
@@ -135,7 +147,7 @@ namespace BuilderPattern
             phone.Call("555999123", "555000321", ".NET Design Patterns");
         }
 
-       
+
     }
 
     public class FakeOrdersService
@@ -215,7 +227,29 @@ namespace BuilderPattern
     //        .Call();    // Build
     //}
 
-    public class FluentPhone
+
+    public interface IFrom
+    {
+        ITo From(string number);
+    }
+
+    public interface ITo
+    {
+        ISubject To(string number);
+    }
+
+    public interface ISubject : ICall, ITo
+    {
+        ICall WithSubject(string subject);
+    }
+
+   
+    public interface ICall
+    {
+        void Call();
+    }
+
+    public class FluentPhone : IFrom, ITo, ICall, ISubject
     {
         private string from;
         private ICollection<string> tos;
@@ -226,28 +260,28 @@ namespace BuilderPattern
             tos = new Collection<string>();
         }
 
-        public static FluentPhone Hangup()
+        public static IFrom Hangup()
         {
             return new FluentPhone();
         }
 
-        public void Hangdown() 
-        { 
+        public void Hangdown()
+        {
         }
 
-        public FluentPhone From(string number)
+        public ITo From(string number)
         {
             this.from = number;
             return this;
         }
 
-        public FluentPhone To(string number)
+        public ISubject To(string number)
         {
             this.tos.Add(number);
             return this;
         }
 
-        public FluentPhone WithSubject(string subject)
+        public ICall WithSubject(string subject)
         {
             this.subject = subject;
             return this;
@@ -255,7 +289,7 @@ namespace BuilderPattern
 
         public void Call()
         {
-            Call(from, tos, subject);           
+            Call(from, tos, subject);
         }
 
         private void Call(string from, string to, string subject)
@@ -316,7 +350,7 @@ namespace BuilderPattern
         public IEnumerable<ProductReportDetail> ProductDetails { get; set; }
         public IEnumerable<GenderReportDetail> GenderDetails { get; set; }
 
-        
+
 
         public override string ToString()
         {
@@ -331,10 +365,10 @@ namespace BuilderPattern
             stringBuilder.AppendLine("------------------------------");
 
             stringBuilder.AppendLine("Total By Products:");
-            
+
             foreach (var detail in ProductDetails)
             {
-                stringBuilder.AppendLine( $"- {detail.Product.Name} {detail.Quantity} {detail.TotalAmount:c2}");
+                stringBuilder.AppendLine($"- {detail.Product.Name} {detail.Quantity} {detail.TotalAmount:c2}");
             }
 
             stringBuilder.AppendLine("Total By Gender:");
