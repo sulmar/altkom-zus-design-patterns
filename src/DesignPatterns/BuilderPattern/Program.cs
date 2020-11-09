@@ -4,10 +4,83 @@ using System.Collections.ObjectModel;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Security.Cryptography.X509Certificates;
+using System.Text;
 using System.Xml;
 
 namespace BuilderPattern
 {
+    public interface ISalesReportBuilder
+    {
+        void AddHeader(string title);
+        void AddSectionByGender();
+        void AddSectionByProduct();
+        SalesReport Build();
+    }
+
+    public class MySalesReportBuilder : ISalesReportBuilder
+    {
+        private string title;
+        private bool hasSectionByGender;
+        private bool hasSectionByProduct;
+
+        private IEnumerable<Order> orders;
+
+        public MySalesReportBuilder(IEnumerable<Order> orders)
+        {
+            this.orders = orders;
+        }
+
+        public void AddHeader(string title)
+        {
+            this.title = title;
+        }
+
+        public void AddSectionByGender()
+        {
+            hasSectionByGender = true;
+        }
+
+        public void AddSectionByProduct()
+        {
+            hasSectionByProduct = true;
+        }
+
+        public SalesReport Build()
+        {
+            SalesReport salesReport = new SalesReport();
+
+            // Header
+            if (!string.IsNullOrEmpty(title))
+            {
+                salesReport.Title = title;
+                salesReport.CreateDate = DateTime.Now;
+                salesReport.TotalSalesAmount = orders.Sum(s => s.Amount);
+            }
+
+            // Section By Gender
+            if (hasSectionByGender)
+            {
+                salesReport.GenderDetails = orders
+                 .GroupBy(o => o.Customer.Gender)
+                 .Select(g => new GenderReportDetail(
+                             g.Key,
+                             g.Sum(x => x.Details.Sum(d => d.Quantity)),
+                             g.Sum(x => x.Details.Sum(d => d.LineTotal))));
+            }
+
+            // Section By Product
+            if (hasSectionByProduct)
+            {
+                salesReport.ProductDetails = orders
+               .SelectMany(o => o.Details)
+               .GroupBy(o => o.Product)
+               .Select(g => new ProductReportDetail(g.Key, g.Sum(p => p.Quantity), g.Sum(p => p.LineTotal)));
+            }
+
+            return salesReport;
+        }
+    }
+
     class Program
     {
         static void Main(string[] args)
@@ -16,7 +89,14 @@ namespace BuilderPattern
 
             //PhoneTest();
 
-            SalesReportTest();
+            // SalesReportTest();
+            FluentPhone
+                .Hangup()
+                .From("555444333")                
+                .To("555888111")
+                .To("555999999")
+                .WithSubject("Wzorce projektowe w C#")
+                .Call();                   
         }
 
         private static void SalesReportTest()
@@ -24,28 +104,31 @@ namespace BuilderPattern
             FakeOrdersService ordersService = new FakeOrdersService();
             IEnumerable<Order> orders = ordersService.Get();
 
-            SalesReport salesReport = new SalesReport();
+            ISalesReportBuilder salesReportBuilder = new MySalesReportBuilder(orders);
+            salesReportBuilder.AddHeader("Raport sprzedaży");
+            salesReportBuilder.AddSectionByGender();
+            salesReportBuilder.AddSectionByProduct();
 
-            salesReport.Title = "Raport sprzedaży";
-            salesReport.CreateDate = DateTime.Now;
-            salesReport.TotalSalesAmount = orders.Sum(s => s.Amount);
-
-            salesReport.GenderDetails = orders
-                .GroupBy(o => o.Customer.Gender)
-                .Select(g => new GenderReportDetail(
-                            g.Key,
-                            g.Sum(x => x.Details.Sum(d => d.Quantity)),
-                            g.Sum(x => x.Details.Sum(d => d.LineTotal))));
-
-            salesReport.ProductDetails = orders
-                .SelectMany(o => o.Details)
-                .GroupBy(o => o.Product)
-                .Select(g => new ProductReportDetail(g.Key, g.Sum(p => p.Quantity), g.Sum(p => p.LineTotal)));
+            SalesReport salesReport = salesReportBuilder.Build();
 
             Console.WriteLine(salesReport);
 
         }
 
+        // Fluent API (deklaratywne)
+        //private static void FluentPhoneTest()
+        //{
+        //    FluentPhone
+        //        .Hangup()
+        //        .HighPriorytet
+        //        .From("555999123")
+        //        .To("555000321")
+        //        .WithSubject(".NET Design Patterns")
+        //        .Call();    // Build
+        //}
+
+
+        // imperatywny
         private static void PhoneTest()
         {
             Phone phone = new Phone();
@@ -120,6 +203,87 @@ namespace BuilderPattern
 
     #region Models
 
+    // Fluent API (deklaratywne)
+    //private static void FluentPhoneTest()
+    //{
+    //    FluentPhone
+    //        .Hangup()
+    //        .HighPriorytet
+    //        .From("555999123")
+    //        .To("555000321")
+    //        .WithSubject(".NET Design Patterns")
+    //        .Call();    // Build
+    //}
+
+    public class FluentPhone
+    {
+        private string from;
+        private ICollection<string> tos;
+        private string subject;
+
+        protected FluentPhone()
+        {
+            tos = new Collection<string>();
+        }
+
+        public static FluentPhone Hangup()
+        {
+            return new FluentPhone();
+        }
+
+        public void Hangdown() 
+        { 
+        }
+
+        public FluentPhone From(string number)
+        {
+            this.from = number;
+            return this;
+        }
+
+        public FluentPhone To(string number)
+        {
+            this.tos.Add(number);
+            return this;
+        }
+
+        public FluentPhone WithSubject(string subject)
+        {
+            this.subject = subject;
+            return this;
+        }
+
+        public void Call()
+        {
+            Call(from, tos, subject);           
+        }
+
+        private void Call(string from, string to, string subject)
+        {
+            Console.WriteLine($"Calling from {from} to {to} with subject {subject}");
+        }
+
+        private void Call(string from, string to)
+        {
+            Console.WriteLine($"Calling from {from} to {to}");
+        }
+
+        private void Call(string from, IEnumerable<string> tos, string subject)
+        {
+            foreach (var to in tos)
+            {
+                if (!string.IsNullOrEmpty(subject))
+                {
+                    Call(from, to, subject);
+                }
+                else
+                {
+                    Call(from, to);
+                }
+            }
+        }
+    }
+
     public class Phone
     {
         public void Call(string from, string to, string subject)
@@ -152,30 +316,35 @@ namespace BuilderPattern
         public IEnumerable<ProductReportDetail> ProductDetails { get; set; }
         public IEnumerable<GenderReportDetail> GenderDetails { get; set; }
 
+        
 
         public override string ToString()
         {
-            string output = string.Empty;
+            StringBuilder stringBuilder = new StringBuilder();
 
-            output += "------------------------------\n";
+            stringBuilder.AppendLine("------------------------------");
 
-            output += $"{Title} {CreateDate}\n";
-            output += $"Total Sales Amount: {TotalSalesAmount:c2}\n";
+            stringBuilder.AppendLine($"{Title} {CreateDate}");
 
-            output += "------------------------------\n";
+            stringBuilder.AppendLine($"Total Sales Amount: {TotalSalesAmount:c2}");
 
-            output += "Total By Products:\n";
+            stringBuilder.AppendLine("------------------------------");
+
+            stringBuilder.AppendLine("Total By Products:");
+            
             foreach (var detail in ProductDetails)
             {
-                output += $"- {detail.Product.Name} {detail.Quantity} {detail.TotalAmount:c2}\n";
-            }
-            output += "Total By Gender:\n";
-            foreach (var detail in GenderDetails)
-            {
-                output += $"- {detail.Gender} {detail.Quantity} {detail.TotalAmount:c2}\n";
+                stringBuilder.AppendLine( $"- {detail.Product.Name} {detail.Quantity} {detail.TotalAmount:c2}");
             }
 
-            return output;
+            stringBuilder.AppendLine("Total By Gender:");
+
+            foreach (var detail in GenderDetails)
+            {
+                stringBuilder.AppendLine($"- {detail.Gender} {detail.Quantity} {detail.TotalAmount:c2}");
+            }
+
+            return stringBuilder.ToString();
         }
     }
 
