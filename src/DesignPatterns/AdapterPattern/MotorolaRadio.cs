@@ -14,7 +14,7 @@ namespace AdapterPattern
             enabled = false;
         }
 
-        public void PowerOn()
+        public void PowerOn(string pincode)
         {
             enabled = true;
         }
