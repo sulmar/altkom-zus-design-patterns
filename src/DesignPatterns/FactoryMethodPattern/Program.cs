@@ -18,17 +18,55 @@ namespace FactoryMethodPattern
 
             string input = Console.ReadLine();
 
-            Visit visit = null;
+            VisitFactory visitFactory = new VisitFactory();
 
-            switch (input)
-            {
-                case "N": visit = new NFZVisit(); break;
-                case "P": visit = new PrivateVisit(); break;
-                case "F": visit = new PackageVisit(); break;
-            }
+            Visit visit = visitFactory.Create(input);
 
             decimal totalAmount = visit.CalculateAmount();
-            Console.WriteLine($"Total amount {totalAmount:C2}");
+
+            Console.BackgroundColor = ColorFactory.Create(totalAmount);
+
+            Console.WriteLine($"Total amount {totalAmount:C2}");           
+        }
+    }
+
+
+    public class ColorFactory
+    {
+        public static ConsoleColor Create(decimal amount)
+        {
+            if (amount < 100)
+                return ConsoleColor.Red;
+            else
+                if (amount >= 100 && amount < 500)
+                return ConsoleColor.Yellow;
+            else
+                return ConsoleColor.Green;
+                
+        }
+    }
+
+    public class Factory        
+    {
+        public static T Create<T>()
+            where T : new()
+        {
+            return new T();
+        }
+    }
+
+    public class VisitFactory
+    {
+        public Visit Create(string input)
+        {
+            switch (input)
+            {
+                case "N": return new NFZVisit(); 
+                case "P": return new PrivateVisit(); 
+                case "F": return new PackageVisit();
+
+                default: throw new NotSupportedException(input);
+            }
         }
     }
 
