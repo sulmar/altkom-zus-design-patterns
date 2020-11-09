@@ -84,7 +84,9 @@ namespace AdapterPattern
 
     public class CrystalReportsService : IReportService
     {
+        // Adaptee
         private readonly ReportDocument report;
+
         private readonly string username;
         private readonly string password;
 
@@ -103,6 +105,7 @@ namespace AdapterPattern
 
     public class ReporingServicesService : IReportService
     {
+        // Adaptee
         private RdlcReportService reportService;
 
         public ReporingServicesService()
