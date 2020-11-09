@@ -13,7 +13,15 @@ namespace SingletonPattern
 
         private static void LoggerTest()
         {
-            MessageService messageService = new MessageService();
+            // MessageService messageService = new MessageService();
+
+            MessageService messageService = LazySingleton<MessageService>.Instance;
+            MessageService messageService2 = LazySingleton<MessageService>.Instance;
+
+            if (ReferenceEquals(messageService, messageService2))
+            {
+            }
+
             PrintService printService = new PrintService();
             messageService.Send("Hello World!");
             printService.Print("Hello World!", 3);
@@ -29,8 +37,43 @@ namespace SingletonPattern
         }
     }
 
+    public class ApplicationContext
+    {
+        public string LoggedUser { get; set; }
+        public DateTime LoggedDate { get; set; }
+
+        public int SelectedInvoiceId { get; set; }
+        public string Message { get; set; }
+
+    }
+
     public class Logger
     {
+        protected Logger()
+        {
+        }
+
+        private static Logger instance;
+
+        private static object syncLock = new object();
+
+        public static Logger Instance
+        {
+            get
+            {
+                lock (syncLock)
+                {
+                    if (instance == null)
+                    {
+                        instance = new Logger();
+                    }
+                }
+
+                return instance;
+            }
+        }
+
+
         public void LogInformation(string message)
         {
             Console.WriteLine($"Logging {message}");
@@ -38,14 +81,13 @@ namespace SingletonPattern
     }
 
 
-
-    public class MessageService
+        public class MessageService
     {
         public Logger logger;
 
         public MessageService()
         {
-            logger = new Logger();
+            logger = Logger.Instance;
         }
 
         public void Send(string message)
@@ -60,7 +102,7 @@ namespace SingletonPattern
 
         public PrintService()
         {
-            logger = new Logger();
+            logger = Logger.Instance;
         }
 
         public void Print(string content, int copies)
