@@ -26,7 +26,9 @@ namespace FactoryMethodPattern
 
             Console.BackgroundColor = ColorFactory.Create(totalAmount);
 
-            Console.WriteLine($"Total amount {totalAmount:C2}");           
+            Console.WriteLine($"Total amount {totalAmount:C2}");
+
+            Console.ResetColor();
         }
     }
 
