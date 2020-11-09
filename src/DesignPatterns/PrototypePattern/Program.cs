@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Linq;
 
 namespace PrototypePattern
@@ -11,7 +12,7 @@ namespace PrototypePattern
             Console.WriteLine("Hello Prototype Pattern!");
             InvoiceCopyTest();
 
-            // ReservationTest();
+            ReservationTest();
         }
 
         private static void ReservationTest()
@@ -25,10 +26,12 @@ namespace PrototypePattern
 
             Display(reservation);
 
-            Reservation secondReservation = new Reservation(reservation.Room,
-                DateTime.Today.AddMonths(1),
-                DateTime.Today.AddMonths(1).AddDays(7),
-                person);
+            //Reservation secondReservation = new Reservation(reservation.Room,
+            //    DateTime.Today.AddMonths(1),
+            //    DateTime.Today.AddMonths(1).AddDays(7),
+            //    person);
+
+            Reservation secondReservation = (Reservation) reservation.Clone();
 
             secondReservation.Breakfast = new Food(FoodType.Regional);
 
@@ -57,7 +60,9 @@ namespace PrototypePattern
 
             Console.WriteLine(invoice);
 
-            Invoice invoiceCopy = new Invoice("INV 2", DateTime.Now, DateTime.Now, invoice.Customer);
+            //Invoice invoiceCopy = new Invoice("INV 2", DateTime.Now, DateTime.Now, invoice.Customer);
+
+            Invoice invoiceCopy = (Invoice) invoice.Clone();
 
             Console.WriteLine(invoiceCopy);
 
@@ -83,10 +88,12 @@ namespace PrototypePattern
 
     #region Invoice Model
 
-    public class Invoice
+    public class Invoice : ICloneable
     {
         public Invoice(string number, DateTime createDate, DateTime dueDate, Customer customer)
         {
+            Details = new Collection<InvoiceDetail>();
+
             Number = number;
             CreateDate = createDate;
             DueDate = dueDate;
@@ -102,13 +109,30 @@ namespace PrototypePattern
 
         public ICollection<InvoiceDetail> Details { get; set; }
 
+        public object Clone()
+        {
+            Invoice copyInvoice = (Invoice) this.MemberwiseClone(); // płytka kopia (shallow copy)
+            
+            foreach (var detail in Details)
+            {
+                copyInvoice.Details.Add((InvoiceDetail) detail.Clone());
+            }
+
+            // głęboka kopia (deep copy) - refleksji, serializacja/deserializacja
+
+            // polecam bibliotekę FastDeepCloner
+            // https://github.com/AlenToma/FastDeepCloner
+
+            return copyInvoice;
+        }
+
         public override string ToString()
         {
             return $"Invoice No {Number} {TotalAmount:C2} {Customer.FullName} paid before {DueDate.ToShortDateString()}";
         }
     }
 
-    public class InvoiceDetail
+    public class InvoiceDetail : ICloneable
     {
         public InvoiceDetail(Product product, int quantity = 1)
         {
@@ -120,6 +144,11 @@ namespace PrototypePattern
         public Product Product { get; set; }
         public int Quantity { get; set; }
         public decimal Amount { get; set; }
+
+        public object Clone()
+        {
+            return this.MemberwiseClone();
+        }
 
         public override string ToString()
         {
@@ -171,7 +200,7 @@ namespace PrototypePattern
         public string Flat { get; }
     }
 
-    public class Reservation
+    public class Reservation : ICloneable
     {
         public Reservation(Room room, DateTime from, DateTime to, Person reserving)
         {
@@ -187,6 +216,17 @@ namespace PrototypePattern
         public Person Reserving { get; set; }
         public Food Breakfast { get; set; }
 
+        public object Clone()
+        {
+            Reservation copyReservation = new Reservation(this.Room,
+              DateTime.Today.AddMonths(1),
+              DateTime.Today.AddMonths(1).AddDays(7),
+              this.Reserving);
+
+            copyReservation.Breakfast = this.Breakfast;
+
+            return copyReservation;
+        }
     }
 
     public class Food
