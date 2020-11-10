@@ -12,7 +12,9 @@ namespace StatePattern
 
             // OrderTest();
 
-            Lamp lamp = new Lamp();
+            StateMachine<LampState, LampTrigger> machine = LampStrategyFactory.Create("A");
+
+            ProxyLamp lamp = new ProxyLamp(machine);
 
 
             Console.WriteLine(lamp.Graph);
@@ -116,6 +118,7 @@ namespace StatePattern
     }
 
 
+
     // dotnet add package Stateless
 
     public class Lamp
@@ -170,11 +173,121 @@ namespace StatePattern
             machine.Fire(LampTrigger.Photo);
         }
 
+    }
+
+
+    public class LampStrategyFactory
+    {
+        public static StateMachine<LampState, LampTrigger> Create(string configuration)
+        {
+            switch(configuration)
+            {
+                case "A": return new LampStrategyA();
+                case "B": return new LampStrategyB();
+
+                default: throw new NotSupportedException(configuration);
+            }
+        }
+
+    }
+
+    public class LampStrategyA : StateMachine<LampState, LampTrigger>
+    {
+        public LampStrategyA(LampState initialState = LampState.Off) : base(initialState)
+        {
+            this.Configure(LampState.Off)
+               .Permit(LampTrigger.Push, LampState.On)
+               .PermitIf(LampTrigger.Photo, LampState.On, () => DateTime.Now.TimeOfDay > TimeSpan.Parse("13:00"))
+               .Ignore(LampTrigger.Timer);
+
+            this.Configure(LampState.On)
+                //.OnEntry(() => timer.Start(), "Start timer")
+                //.OnEntry(() => timer.Start(), "Start timer")
+                //.OnExit(() => timer.Stop(), "Stop timer")
+                .Permit(LampTrigger.Push, LampState.Off)
+                .Permit(LampTrigger.Photo, LampState.Off)
+                .Permit(LampTrigger.Timer, LampState.Off);
+        }
+    }
+
+    public class LampStrategyB : StateMachine<LampState, LampTrigger>
+    {
+        public LampStrategyB(LampState initialState = LampState.Off) : base(initialState)
+        {
+            this.Configure(LampState.Off)
+               .Permit(LampTrigger.Push, LampState.On)
+               .PermitIf(LampTrigger.Photo, LampState.On, () => DateTime.Now.TimeOfDay > TimeSpan.Parse("10:00"))
+               .Ignore(LampTrigger.Timer);
+
+            this.Configure(LampState.On)
+                //.OnEntry(() => timer.Start(), "Start timer")
+                //.OnEntry(() => timer.Start(), "Start timer")
+                //.OnExit(() => timer.Stop(), "Stop timer")
+                .Permit(LampTrigger.Push, LampState.Off)
+                .Permit(LampTrigger.Photo, LampState.Off)
+                .Permit(LampTrigger.Timer, LampState.Off);
+        }
+    }
+
+
+    public class ProxyLamp : LampPoco
+    {
+        private readonly StateMachine<LampState, LampTrigger> machine;
+
+        public string Graph => Stateless.Graph.UmlDotGraph.Format(machine.GetInfo());
+
+        public Action OnLampOn { get; set; }
+
+        public override LampState State => machine.State;
+
+        public ProxyLamp(StateMachine<LampState, LampTrigger> machine)
+        {
+            this.machine = machine;
+
+            machine.OnTransitioned(t => Console.WriteLine($"{t.Source} -> {t.Destination}"));
+        }
+
+        public override void Push()
+        {
+            machine.Fire(LampTrigger.Push);
+        }
+
         
+    }
 
 
-      
+    public class LampPoco
+    {
+        public virtual LampState State { get; set; }
 
+        protected Timer timer;
+
+        public LampPoco()
+        {
+            State = LampState.Off;
+            timer = new Timer(TimeSpan.FromSeconds(5).TotalMilliseconds);
+            timer.Elapsed += Timer_Elapsed;
+        }
+        private void Timer_Elapsed(object sender, ElapsedEventArgs e)
+        {
+            if (State == LampState.On)
+            {
+                State = LampState.Off;
+            }
+        }
+
+        public virtual void Push()
+        {
+            if (State == LampState.Off)
+            {
+                State = LampState.On;
+            }
+            else 
+            if (State == LampState.On)
+            {
+                State = LampState.Off;
+            }
+        }
 
     }
 
