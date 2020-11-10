@@ -14,7 +14,9 @@ namespace DecoratorPattern
         {
             Console.WriteLine("Hello Decorator Pattern!");
 
-            CalculateOrderDiscountTest();
+            FileCompressTest();
+
+            // CalculateOrderDiscountTest();
 
             // FileTest();
         }
@@ -61,6 +63,19 @@ namespace DecoratorPattern
             using (GZipStream zipStream = new GZipStream(fs2, CompressionMode.Compress, false))
             {
                 zipStream.Write(bytes, 0, bytes.Length);
+            }
+        }
+
+        private static void FileCompressTest()
+        {
+            string path = "lorem-ipsum.txt";
+            string output = $"copy of {path}";
+
+            Stream stream = new GZipStream(new FileStream(output, FileMode.Create), CompressionLevel.Fastest);
+
+            using(StreamWriter writer = new StreamWriter(stream))
+            {
+                writer.WriteLine("Hello world!");
             }
         }
     }

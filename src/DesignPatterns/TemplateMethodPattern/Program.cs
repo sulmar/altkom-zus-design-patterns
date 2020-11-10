@@ -14,7 +14,14 @@ namespace TemplateMethodPattern
 
             Order order = CreateOrder();
 
-            HappyHoursOrderCalculator calculator = new HappyHoursOrderCalculator();
+            // HappyHoursOrderCalculator calculator = new HappyHoursOrderCalculator(TimeSpan.Parse("09:00"), TimeSpan.Parse("16:30"), 0.1m);
+
+            // GenderOrderCalculator calculator = new GenderOrderCalculator(Gender.Female, 0.2m);
+
+            // HappyHoursDiscountOrderCalculator calculator = new HappyHoursDiscountOrderCalculator(TimeSpan.Parse("09:00"), TimeSpan.Parse("16:30"), 0.1m);
+
+            GenderDiscountOrderCalculator calculator = new GenderDiscountOrderCalculator(Gender.Female, 0.2m);
+
             decimal discount = calculator.CalculateDiscount(order);
 
             Console.WriteLine($"Original amount: {order.Amount:C2} Discount: {discount:C2}");
