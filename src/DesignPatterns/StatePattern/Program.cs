@@ -234,6 +234,7 @@ namespace StatePattern
     {
         private readonly StateMachine<LampState, LampTrigger> machine;
 
+        // https://github.com/dotnet-state-machine/stateless
         // https://dreampuf.github.io/GraphvizOnline/
         public string Graph => Stateless.Graph.UmlDotGraph.Format(machine.GetInfo());
 
@@ -245,7 +246,7 @@ namespace StatePattern
         {
             this.machine = machine;
 
-            machine.OnTransitioned(t => Console.WriteLine($"{t.Source} -> {t.Destination}"));
+            machine.OnTransitioned(t => Console.WriteLine($"{DateTime.Now} {t.Source} -> {t.Destination}"));
         }
 
         public override void Push()
