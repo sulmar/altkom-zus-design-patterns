@@ -1,4 +1,6 @@
-﻿using System;
+﻿using Stateless;
+using System;
+using System.Timers;
 
 namespace StatePattern
 {
@@ -11,15 +13,23 @@ namespace StatePattern
             // OrderTest();
 
             Lamp lamp = new Lamp();
+
+
+            Console.WriteLine(lamp.Graph);
+
             Console.WriteLine(lamp.State);
 
-            lamp.PowerOn();
+            lamp.Push();
             Console.WriteLine(lamp.State);
 
-            lamp.PowerOff();
-            Console.WriteLine(lamp.State);
+            //lamp.Push();
+            //Console.WriteLine(lamp.State);
 
-            lamp.PowerOff();
+            //lamp.Photo();
+            //Console.WriteLine(lamp.State);
+
+            System.Threading.Thread.Sleep(TimeSpan.FromSeconds(6));
+
             Console.WriteLine(lamp.State);
 
 
@@ -105,37 +115,65 @@ namespace StatePattern
         Done
     }
 
+
+    // dotnet add package Stateless
+
     public class Lamp
     {
-        public LampState State { get; set; }
+        public LampState State => machine.State;
+
+        private readonly StateMachine<LampState, LampTrigger> machine;
+
+        private Timer timer;
+
+        public string Graph => Stateless.Graph.UmlDotGraph.Format(machine.GetInfo());
+
+        public Action OnLampOn { get; set; }
 
         public Lamp()
         {
-            State = LampState.Off;
+            machine = new StateMachine<LampState, LampTrigger>(LampState.Off);
+
+            machine.Configure(LampState.Off)
+                .Permit(LampTrigger.Push, LampState.On)
+                .PermitIf(LampTrigger.Photo, LampState.On, () => DateTime.Now.TimeOfDay > TimeSpan.Parse("13:00"))
+                .Ignore(LampTrigger.Timer);
+
+            machine.Configure(LampState.On)
+                .OnEntry(OnLampOn)
+                .OnEntry(() => timer.Start(), "Start timer")
+                .OnEntry(()=> timer.Start(), "Start timer")
+                .OnExit(() => timer.Stop(), "Stop timer")
+                .Permit(LampTrigger.Push, LampState.Off)
+                .Permit(LampTrigger.Photo, LampState.Off)
+                .Permit(LampTrigger.Timer, LampState.Off);
+
+            machine.OnTransitioned(t => Console.WriteLine($"{t.Source} -> {t.Destination}"));
+
+            timer = new Timer(TimeSpan.FromSeconds(5).TotalMilliseconds);
+
+            timer.Elapsed += Timer_Elapsed;
         }
 
-        public void PowerOn()
+        private void Timer_Elapsed(object sender, ElapsedEventArgs e)
         {
-            if (State == LampState.Off)
-            {
-                State = LampState.On;
-            }
-            else
-                throw new InvalidOperationException($"state {State}");
-
+            machine.Fire(LampTrigger.Timer);
         }
 
-        public void PowerOff()
+        public void Push()
         {
-            if (State == LampState.On)
-            {
-                State = LampState.Off;
-            }
-            else
-                throw new InvalidOperationException($"state {State}");
-
+            machine.Fire(LampTrigger.Push);
         }
 
+        public void Photo()
+        {
+            machine.Fire(LampTrigger.Photo);
+        }
+
+        
+
+
+      
 
 
     }
@@ -144,6 +182,13 @@ namespace StatePattern
     {
         On,
         Off
+    }
+
+    public enum LampTrigger
+    {
+        Push,
+        Photo,
+        Timer
     }
 
     #endregion
