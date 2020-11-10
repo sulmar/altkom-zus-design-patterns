@@ -10,38 +10,47 @@ namespace NullObjectPattern
 
             IProductRepository productRepository = new FakeProductRepository();
 
-            Product product = productRepository.Get(1);
+            ProductBase product = productRepository.Get(1);
 
             // Problem: Zawsze musimy sprawdzać czy obiekt nie jest pusty (null).
+            product.RateId(3);
 
-            if (product != null)
-            {
-                product.RateId(3);
-            }
         }
     }
 
     public interface IProductRepository
     {
-        Product Get(int id);
+        ProductBase Get(int id);
     }
 
     public class FakeProductRepository : IProductRepository
     {
-        public Product Get(int id)
+        public ProductBase Get(int id)
         {
-            return null;
+            return new NullProduct();
         }
     }
 
-    public class Product
+    public abstract class ProductBase
+    {
+        public abstract void RateId(int rate);
+    }
+
+    public class Product : ProductBase
     {
         private int rate;
 
-        public void RateId(int rate)
+        public override void RateId(int rate)
         {
             this.rate = rate;
         }
+    }
 
+    public class NullProduct : ProductBase
+    {
+        public override void RateId(int rate)
+        {
+            // nic nie rób
+        }
     }
 }
