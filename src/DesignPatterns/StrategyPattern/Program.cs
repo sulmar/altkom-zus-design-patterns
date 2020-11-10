@@ -23,7 +23,16 @@ namespace StrategyPattern
 
             Order order = CreateOrder(customer);
 
-            HappyHoursOrderCalculator calculator = new HappyHoursOrderCalculator();
+            // HappyHoursDiscountStrategy discountStrategy = new HappyHoursDiscountStrategy(TimeSpan.Parse("09:00"), TimeSpan.Parse("16:30"), 0.1m);
+
+            // GenderDiscountStrategy discountStrategy = new GenderDiscountStrategy(Gender.Female, 0.2m);
+
+            ICanDiscountStrategy canDiscountStrategy = new HappyHoursCanDiscountStrategy(TimeSpan.Parse("09:00"), TimeSpan.Parse("16:30"));
+            ICalculateDiscountStrategy calculateDiscount = new FixedDiscountStrategy(10m);
+
+            DiscountOrderCalculator2 calculator = new DiscountOrderCalculator2(canDiscountStrategy, calculateDiscount);
+
+            // HappyHoursOrderCalculator calculator = new HappyHoursOrderCalculator();
             decimal discount = calculator.CalculateDiscount(order);
 
             Console.WriteLine($"Original amount: {order.Amount:C2} Discount: {discount:C2}");
