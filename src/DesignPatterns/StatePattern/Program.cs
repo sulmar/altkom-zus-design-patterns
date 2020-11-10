@@ -234,6 +234,7 @@ namespace StatePattern
     {
         private readonly StateMachine<LampState, LampTrigger> machine;
 
+        // https://dreampuf.github.io/GraphvizOnline/
         public string Graph => Stateless.Graph.UmlDotGraph.Format(machine.GetInfo());
 
         public Action OnLampOn { get; set; }
